@@ -1,19 +1,8 @@
-# go-pool
-
-
-### 1、channel
-
-多协程中通道通信。
-
-- unbuffered channel 发送接收需要同时准备，否则阻塞
-- buffered channel 空时，读取阻塞；满时，写入阻塞
-
-
-```go
 package standard
 
 import (
 	"fmt"
+	"sync"
 )
 
 // UnbufferedEmptyRead 无缓冲通道 读阻塞
@@ -54,16 +43,6 @@ func BufferedFullWrite() {
 	c <- struct{}{}
 }
 
-```
-
-
-- nil channel 
-
-读/写都阻塞
-
-```go
-package main
-
 func NilChannel1() {
 	var c chan struct{}
 	<-c
@@ -73,23 +52,6 @@ func NilChannel2() {
 	var c chan struct{}
 	c <- struct{}{}
 }
-
-```
-
-- 需不需要主动关闭 channel
-
-不需要。
-
-gc 会自动操作。
-
-如果需要关闭 channel ，则在发送方主动关闭。
-```go
-package main
-
-import (
-	"fmt"
-	"sync"
-)
 
 func CloseChannelOK() {
 	var c = make(chan int)
@@ -112,19 +74,6 @@ func CloseChannelOK() {
 	}()
 	wg.Wait()
 }
-
-
-```
-
-
-- panic 场景
-
-```go
-package main
-
-import (
-	"fmt"
-)
 
 func NilChannelClose() {
 	var c chan struct{}
@@ -150,46 +99,3 @@ func CloseClosedChannel() {
 	close(c)
 	close(c)
 }
-```
-
-
-
-
-### 通用用法
-
-- 信号通知
-
-```go
-
-package standard
-
-import "fmt"
-
-// Notify 通知 信号传递
-func Notify() {
-	var c = make(chan int)
-	go func() {
-		c <- 100
-	}()
-	fmt.Println(<-c)
-}
-
-type Signal struct {}
-
-func Notify1Vs() {
-	c := Spawn(func() {
-		fmt.Println("Hello Spawn")
-	})
-	<-c
-}
-
-func Spawn(f func()) <-chan Signal {
-	var c = make(chan Signal)
-	go func() {
-		f()
-		c <- Signal{}
-	}()
-	return c
-}
-
-```
